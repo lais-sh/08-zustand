@@ -2,33 +2,37 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
-import { fetchNoteById } from '@/lib/api';
+import type { AxiosError } from 'axios';
 import type { Note } from '@/types/note';
+import { fetchNoteById } from '@/lib/api/notes'; 
 
 type Props = {
-  /** Можно передать id сверху; если не передан — возьмём из useParams */
   noteId?: string;
 };
 
 export default function NoteDetailsClient({ noteId }: Props) {
-  const params = useParams<{ id: string }>();
-  const id = noteId ?? params?.id;           // ← всегда string
+  const params = useParams<{ id: string | string[] }>();
+  const routeId = Array.isArray(params?.id) ? params.id[0] : params?.id;
+  const id = noteId ?? routeId;
 
-  if (!id) return null;
-
-  const { data, isLoading, isError, error } = useQuery<Note>({
+  const { data, isLoading, isError, error } = useQuery<Note, AxiosError>({
     queryKey: ['note', id],
-    queryFn: () => fetchNoteById(id),        // ← string
+    queryFn: () => fetchNoteById(id as string),
+    enabled: !!id,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
     refetchOnMount: false,
   });
 
+  if (!id) return null;
   if (isLoading) return <p>Loading…</p>;
-  if (isError || !data)
+  if (isError || !data) {
     return (
       <p style={{ color: 'red' }}>
-        Failed to load note{error instanceof Error ? `: ${error.message}` : ''}
+        Failed to load note{error?.message ? `: ${error.message}` : ''}
       </p>
     );
+  }
 
   return (
     <article style={{ maxWidth: 720, margin: '2rem auto', lineHeight: 1.6 }}>
