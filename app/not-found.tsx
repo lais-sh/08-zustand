@@ -1,15 +1,29 @@
-import styles from "./NotFound.module.css";
+import type { Metadata } from 'next';
 
-export default function NotFoundPage() {
+const siteUrl = 'https://your-vercel-domain.vercel.app';
+
+export const metadata: Metadata = {
+  title: 'Page Not Found - NoteHub',
+  description: 'This page does not exist in NoteHub.',
+  metadataBase: new URL(siteUrl),
+  openGraph: {
+    title: 'Page Not Found - NoteHub',
+    description: 'Oops! The page you are looking for does not exist.',
+    url: `${siteUrl}/not-found`,
+    images: ['https://ac.goit.global/fullstack/react/notehub-og-meta.jpg'],
+    siteName: 'NoteHub',
+    type: 'website',
+  },
+  alternates: {
+    canonical: '/not-found',
+  },
+};
+
+export default function NotFound() {
   return (
-    <main className={styles.wrapper}>
-      <h1 className={styles.title}>404 — Nothing Here</h1>
-      <p className={styles.text}>
-        This page couldn't be found. Please check the URL or go back to the homepage.
-      </p>
-      <a href="/" className={styles.link}>
-        Back to Home
-      </a>
+    <main>
+      <h1>Page not found</h1>
+      <p>The page you're looking for doesn't exist.</p>
     </main>
   );
 }
