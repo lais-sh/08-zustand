@@ -7,7 +7,7 @@ export interface Draft {
   tag: string;
 }
 
-const initialDraft: Draft = {
+export const initialDraft: Draft = {
   title: "",
   content: "",
   tag: "Todo",
@@ -27,8 +27,6 @@ export const useNoteStore = create<NoteStore>()(
         set((state) => ({ draft: { ...state.draft, ...data } })),
       clearDraft: () => set({ draft: initialDraft }),
     }),
-    {
-      name: "note-draft",
-    }
+    { name: "note-draft" }
   )
 );
