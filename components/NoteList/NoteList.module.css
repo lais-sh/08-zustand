@@ -1,0 +1,162 @@
+.list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.listItem {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;        border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(2, 6, 23, 0.06);
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  will-change: transform, box-shadow;
+}
+
+.listItem:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(2, 6, 23, 0.12);
+  border-color: #d1d5db;
+}
+
+.title {
+  font-size: 18px;
+  line-height: 1.35;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  color: #1f2937;
+}
+
+.content {
+  margin: 0 0 12px 0;
+  flex-grow: 1;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #4b5563;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  line-clamp: 4;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  gap: 12px;
+}
+
+.tag {
+  display: inline-block;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0b3bda;
+  background-color: #e8efff;
+  border: 1px solid #cfe0ff;
+  border-radius: 9999px;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tag[data-tag="Work"] {
+  color: #1f6f3f; background:#e7f7ed; border-color:#ccebd8;
+}
+.tag[data-tag="Personal"] {
+  color: #9a3412; background:#fff1e6; border-color:#ffd8b5;
+}
+.tag[data-tag="Shopping"] {
+  color: #6b21a8; background:#f3e8ff; border-color:#e9d5ff;
+}
+.tag[data-tag="Todo"] {
+  color: #0b3bda; background:#e8efff; border-color:#cfe0ff;
+}
+
+.button,
+.link {
+  align-self: flex-end;
+  padding: 8px 14px;
+  font-size: 14px;
+  line-height: 1;
+  border-radius: 10px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  user-select: none;
+}
+
+.link {
+  color: #ffffff;
+  background-color: #2563eb;
+}
+.link:hover { background-color: #1d4ed8; }
+.link:active { transform: translateY(1px); }
+.link:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35);
+}
+
+.button {
+  color: #ffffff;
+  background-color: #dc2626;
+}
+.button:hover { background-color: #b91c1c; }
+.button:active { transform: translateY(1px); }
+.button:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.35);
+}
+
+@media (max-width: 640px) {
+  .list {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .listItem { padding: 14px; }
+  .title { font-size: 16px; }
+  .content {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  line-clamp: 5;
+  -webkit-line-clamp: 5;
+  overflow: hidden;
+}
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .listItem,
+  .button,
+  .link {
+    transition: none;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .listItem {
+    background-color: #0b1220;
+    border-color: #1f2937;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+  .title { color: #e5e7eb; }
+  .content { color: #cbd5e1; }
+  .tag {
+    color: #93c5fd;
+    background-color: #0b1220;
+    border-color: #1d4ed8;
+  }
+  .link { background-color: #1d4ed8; }
+  .link:hover { background-color: #1e40af; }
+}
