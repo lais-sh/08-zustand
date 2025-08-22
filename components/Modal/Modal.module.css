@@ -1,16 +1,31 @@
-.backdrop {
+.overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: grid;
-  place-items: center;
+  background: rgba(30, 32, 35, 0.6);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 4vh 16px;
   z-index: 1000;
 }
 
 .content {
   background: #fff;
-  padding: 24px;
-  border-radius: 12px;
-  max-width: 700px;
+  border-radius: 16px;
+  max-width: 800px;
   width: 100%;
+  padding: 24px;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 24px;
+  line-height: 1;
+  border: none;
+  background: transparent;
+  cursor: pointer;
 }

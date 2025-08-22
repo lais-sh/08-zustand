@@ -1,17 +1,36 @@
-import type { Note, NoteTag, NewNote } from "@/types/note";
-import { API } from "./http";
+import axios from 'axios';
+import type { Note, NoteTag, NewNote } from '@/types/note';
+import { API } from './http';
 
 export type NotesResponse = {
   notes: Note[];
   totalPages: number;
+  page: number;
 };
 
 type FetchNotesParams = {
   page: number;
   perPage?: number;
   search?: string;
-  tag?: NoteTag | "All";
+  tag?: NoteTag | 'All';
 };
+
+function normalizeListResponse(raw: any, fallbackPerPage: number): NotesResponse {
+  const notes: Note[] =
+    raw?.notes ?? raw?.results ?? raw?.items ?? raw?.data ?? [];
+
+  const page: number = Number(raw?.page ?? 1);
+  const perPageFromApi =
+    Number(raw?.perPage ?? raw?.limit ?? fallbackPerPage) || fallbackPerPage;
+
+  const totalPages: number =
+    Number(raw?.totalPages) ||
+    (raw?.total
+      ? Math.max(1, Math.ceil(Number(raw.total) / perPageFromApi))
+      : 1);
+
+  return { notes, totalPages, page };
+}
 
 export async function fetchNotes({
   page,
@@ -19,36 +38,50 @@ export async function fetchNotes({
   search,
   tag,
 }: FetchNotesParams): Promise<NotesResponse> {
-  const params: Record<string, string | number | undefined> = {
-    page,
-    perPage,
-    ...(search?.trim() ? { search } : {}),
-    ...(tag && tag !== "All" ? { tag } : {}),
-  };
+  const params: Record<string, string | number> = { page };
 
-  const { data } = await API.get<NotesResponse>("/notes", { params });
-  return data;
+  const q = search?.trim();
+  if (q) params.q = q;
+  if (tag && tag !== 'All') params.tag = tag;
+
+  try {
+    const { data } = await API.get('/notes', { params });
+    return normalizeListResponse(data, perPage);
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      const status = err.response?.status ?? 'unknown';
+      const body = err.response?.data ?? err.message;
+      throw new Error(
+        `List fetch failed (${status}). ${
+          typeof body === 'string' ? body : JSON.stringify(body)
+        }`
+      );
+    }
+    throw err;
+  }
 }
 
 export async function fetchNoteById(noteId: string): Promise<Note> {
-  const { data } = await API.get<Note>(`/notes/${noteId}`);
-  return data;
+  const { data } = await API.get<Note | { note: Note }>(`/notes/${noteId}`);
+  return (data as any)?.note ?? (data as Note);
 }
 
 export async function createNote(payload: NewNote): Promise<Note> {
-  const { data } = await API.post<Note>("/notes", payload);
-  return data;
+  const { data } = await API.post<Note | { note: Note }>('/notes', payload);
+  return (data as any)?.note ?? (data as Note);
 }
 
 export async function updateNote(
   noteId: string,
   payload: Partial<NewNote>
 ): Promise<Note> {
-  const { data } = await API.patch<Note>(`/notes/${noteId}`, payload);
-  return data;
+  const { data } = await API.patch<Note | { note: Note }>(
+    `/notes/${noteId}`,
+    payload
+  );
+  return (data as any)?.note ?? (data as Note);
 }
 
-export async function deleteNote(noteId: string): Promise<Note> {
-  const { data } = await API.delete<Note>(`/notes/${noteId}`);
-  return data;
+export async function deleteNote(noteId: string): Promise<void> {
+  await API.delete(`/notes/${noteId}`);
 }

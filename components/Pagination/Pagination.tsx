@@ -1,33 +1,32 @@
-import ReactPaginate from 'react-paginate';
-import styles from './Pagination.module.css';
+'use client';
 
-interface PaginationProps {
+type PaginationProps = {
   currentPage: number;
   totalPages: number;
-  onPageChange: (selectedPage: number) => void;
-}
+  onPageChange: (page: number) => void;
+};
 
 export default function Pagination({
   currentPage,
   totalPages,
   onPageChange,
 }: PaginationProps) {
+  if (!totalPages || totalPages <= 1) return null;
+
+  const go = (p: number) => {
+    if (p < 1 || p > totalPages || p === currentPage) return;
+    onPageChange(p);
+  };
+
   return (
-    <ReactPaginate
-      nextLabel="→"
-      previousLabel="←"
-      breakLabel="..."
-      pageCount={totalPages}
-      forcePage={currentPage - 1}
-      onPageChange={(e) => onPageChange(e.selected + 1)}
-      containerClassName={styles.pagination}
-      pageLinkClassName={styles.page}
-      previousLinkClassName={styles.previous}
-      nextLinkClassName={styles.next}
-      breakLinkClassName={styles.break}
-      activeLinkClassName={styles.active}
-      disabledLinkClassName={styles.disabled}
-      renderOnZeroPageCount={null}
-    />
+    <nav aria-label="Pagination" style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'center', marginTop: 24 }}>
+      <button onClick={() => go(currentPage - 1)} disabled={currentPage <= 1}>
+        Prev
+      </button>
+      <span>{currentPage} / {totalPages}</span>
+      <button onClick={() => go(currentPage + 1)} disabled={currentPage >= totalPages}>
+        Next
+      </button>
+    </nav>
   );
 }

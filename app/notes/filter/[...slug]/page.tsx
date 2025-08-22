@@ -1,39 +1,31 @@
-import { notFound } from "next/navigation";
-import NoteList from "@/components/NoteList/NoteList";
-import { fetchNotes } from "@/lib/api/notes";
-import type { NoteTag } from "@/types/note";
-import type { Metadata } from "next";
+import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 
-export const dynamic = "force-dynamic";
+import NotesClient from './Notes.client';
+import { fetchNotes } from '@/lib/api/notes';
+import type { NoteTag } from '@/types/note';
 
-const ALLOWED_TAGS: ReadonlyArray<NoteTag | "All"> = [
-  "All",
-  "Work",
-  "Personal",
-  "Meeting",
-  "Shopping",
-  "Todo",
-];
+export const dynamic = 'force-dynamic';
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug?: string[] };
-}): Promise<Metadata> {
-  const [rawTag] = params.slug ?? [];
-  const tag = (rawTag ?? "All") as NoteTag | "All";
+const ALLOWED_TAGS = ['All', 'Work', 'Personal', 'Meeting', 'Shopping', 'Todo'] as const;
+type AllowedTag = (typeof ALLOWED_TAGS)[number];
 
-  if (!ALLOWED_TAGS.includes(tag)) {
-    return {
-      title: "Notes - Not Found",
-      description: "This filter does not exist.",
-    };
-  }
+type Params = { slug?: string[] };
+type SParams = { page?: string; q?: string };
 
-  const title = tag === "All" ? "All notes - NoteHub" : `Notes tagged: ${tag} - NoteHub`;
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+
+export async function generateMetadata(
+  { params }: { params: Promise<Params> }
+): Promise<Metadata> {
+  const { slug } = await params;
+  const rawTag = decodeURIComponent(slug?.[0] ?? 'All');
+  const tag = (ALLOWED_TAGS.includes(rawTag as AllowedTag) ? (rawTag as AllowedTag) : 'All') as AllowedTag;
+
+  const title = tag === 'All' ? 'All notes - NoteHub' : `Notes tagged: ${tag} - NoteHub`;
   const description =
-    tag === "All"
-      ? "Browse all your personal notes in NoteHub."
+    tag === 'All'
+      ? 'Browse all your personal notes in NoteHub.'
       : `Browse notes tagged with ${tag} in NoteHub.`;
 
   return {
@@ -42,49 +34,39 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      url: `https://your-vercel-domain.vercel.app/notes/filter/${tag}`,
-      images: ["https://ac.goit.global/fullstack/react/notehub-og-meta.jpg"],
+      url: `${SITE_URL}/notes/filter/${encodeURIComponent(rawTag)}`,
+      images: ['https://ac.goit.global/fullstack/react/notehub-og-meta.jpg'],
+      siteName: 'NoteHub',
+      type: 'website',
     },
   };
 }
 
-export default async function Page({
-  params,
-}: {
-  params: { slug?: string[] };
-}) {
-  const [rawTag, rawPage] = params.slug ?? [];
-  const tag = (rawTag ?? "All") as NoteTag | "All";
+export default async function Page(
+  { params, searchParams }: { params: Promise<Params>; searchParams: Promise<SParams> }
+) {
+  const [{ slug }, sp] = await Promise.all([params, searchParams]);
 
-  if (!ALLOWED_TAGS.includes(tag)) {
+  const rawTag = decodeURIComponent(slug?.[0] ?? 'All');
+  const tag = rawTag as NoteTag | 'All';
+
+  if (!ALLOWED_TAGS.includes(tag as AllowedTag)) {
     notFound();
   }
 
-  const page = rawPage ? Number(rawPage) : 1;
-  if (!Number.isFinite(page) || page < 1) {
-    notFound();
-  }
+  const pageNum = Math.max(1, Number(sp?.page ?? 1) || 1);
+  const q = typeof sp?.q === 'string' ? sp.q.trim() : '';
 
+  let initialData;
   try {
-    const data = await fetchNotes({ page, tag });
-
-    if (!data || data.notes.length === 0) {
-      return (
-        <>
-          <h1>{tag === "All" ? "All notes" : `Notes tagged: ${tag}`}</h1>
-          <p>No notes found.</p>
-        </>
-      );
-    }
-
-    return (
-      <>
-        <h1>{tag === "All" ? "All notes" : `Notes tagged: ${tag}`}</h1>
-        <NoteList notes={data.notes} />
-      </>
-    );
-  } catch (e) {
-    console.error("❌ Error fetching notes:", e);
-    return <p>Could not fetch the list of notes. Please try again later.</p>;
+    initialData = await fetchNotes({
+      page: pageNum,
+      search: q,
+      tag: tag === 'All' ? undefined : (tag as NoteTag),
+    });
+  } catch {
+    initialData = { notes: [], totalPages: 1, page: pageNum };
   }
+
+  return <NotesClient initialData={initialData} tag={rawTag} />;
 }
