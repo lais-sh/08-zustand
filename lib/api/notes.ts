@@ -16,9 +16,7 @@ type FetchNotesParams = {
 
 function normalizeListResponse(raw: any, page: number): NotesResponse {
   const notes: Note[] = raw?.notes ?? raw?.results ?? raw?.items ?? raw?.data ?? [];
-
   const perPage = Number(raw?.perPage ?? raw?.limit ?? 12) || 12;
-
   const totalPages =
     Number(raw?.totalPages) ||
     (raw?.total ? Math.max(1, Math.ceil(Number(raw.total) / perPage)) : 1);
@@ -26,7 +24,11 @@ function normalizeListResponse(raw: any, page: number): NotesResponse {
   return { notes, totalPages, page };
 }
 
-export async function fetchNotes({ page, search, tag }: FetchNotesParams): Promise<NotesResponse> {
+export async function fetchNotes({
+  page,
+  search,
+  tag,
+}: FetchNotesParams): Promise<NotesResponse> {
   const params: Record<string, string | number> = { page };
 
   const q = search?.trim();
@@ -60,7 +62,10 @@ export async function createNote(payload: NewNote): Promise<Note> {
   return (data as any)?.note ?? (data as Note);
 }
 
-export async function updateNote(noteId: string, payload: Partial<NewNote>): Promise<Note> {
+export async function updateNote(
+  noteId: string,
+  payload: Partial<NewNote>
+): Promise<Note> {
   const { data } = await API.patch<Note | { note: Note }>(`/notes/${noteId}`, payload);
   return (data as any)?.note ?? (data as Note);
 }
