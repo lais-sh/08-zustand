@@ -1,22 +1,29 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { fetchNoteById } from '@/lib/api/notes';
-import type { Note } from '@/types/note';
 
-type PageProps = { params: { id: string } };
+export const dynamic = 'force-dynamic';
 
-const siteUrl = 'https://your-vercel-domain.vercel.app';
+type Params = { id: string };
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const id = params?.id;
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://your-vercel-domain.vercel.app';
+
+export async function generateMetadata(
+  { params }: { params: Promise<Params> }
+): Promise<Metadata> {
+  const { id } = await params;
+
   if (!id) {
+    const title = 'Note not found - NoteHub';
+    const description = 'The requested note does not exist.';
     return {
-      title: 'Note not found - NoteHub',
-      description: 'The requested note does not exist.',
+      title,
+      description,
       openGraph: {
-        title: 'Note not found - NoteHub',
-        description: 'The requested note does not exist.',
-        url: `${siteUrl}/notes/${id ?? ''}`,
+        title,
+        description,
+        url: `${siteUrl}/notes/`,
         images: ['https://ac.goit.global/fullstack/react/notehub-og-meta.jpg'],
       },
     };
@@ -24,84 +31,84 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   try {
     const note = await fetchNoteById(id);
-    if (!note) throw new Error('not-found');
-
+    const title = `${note.title} - NoteHub`;
     const description =
-      (note.content ?? '').trim().slice(0, 140) || `Details for note "${note.title}"`;
+      (note.content ?? '').trim().slice(0, 160) ||
+      `Details for note "${note.title}"`;
 
     return {
-      title: `${note.title} - NoteHub`,
+      title,
       description,
+      alternates: { canonical: `/notes/${id}` },
       openGraph: {
-        title: `${note.title} - NoteHub`,
+        title,
         description,
-        url: `${siteUrl}/notes/${id}`,
+        url: `${siteUrl}/notes/${encodeURIComponent(id)}`,
         images: ['https://ac.goit.global/fullstack/react/notehub-og-meta.jpg'],
+        siteName: 'NoteHub',
         type: 'article',
       },
-      alternates: { canonical: `/notes/${id}` },
     };
   } catch {
+    const title = 'Note not found - NoteHub';
+    const description = 'The requested note does not exist.';
     return {
-      title: 'Note not found - NoteHub',
-      description: 'The requested note does not exist.',
+      title,
+      description,
       openGraph: {
-        title: 'Note not found - NoteHub',
-        description: 'The requested note does not exist.',
-        url: `${siteUrl}/notes/${id}`,
+        title,
+        description,
+        url: `${siteUrl}/notes/${encodeURIComponent(id)}`,
         images: ['https://ac.goit.global/fullstack/react/notehub-og-meta.jpg'],
+        siteName: 'NoteHub',
+        type: 'article',
       },
     };
   }
 }
 
-export default async function NoteDetailsPage({ params }: PageProps) {
-  const id = params?.id;
-  if (!id || typeof id !== 'string') {
-    notFound();
-  }
+export default async function NoteDetailsPage(
+  { params }: { params: Promise<Params> }
+) {
+  const { id } = await params;
+  if (!id) notFound();
 
-  let note: Note | undefined;
   try {
-    note = await fetchNoteById(id);
+    const note = await fetchNoteById(id);
+
+    return (
+      <article style={{ maxWidth: 720, margin: '2rem auto', lineHeight: 1.6 }}>
+        <header
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 12,
+          }}
+        >
+          <h1 style={{ margin: 0 }}>{note.title}</h1>
+          <span
+            style={{
+              padding: '4px 8px',
+              borderRadius: 8,
+              background: '#eef',
+              fontSize: 12,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {note.tag}
+          </span>
+        </header>
+
+        <p style={{ marginTop: 12, whiteSpace: 'pre-wrap' }}>{note.content}</p>
+
+        <footer style={{ marginTop: 24, fontSize: 12, color: '#666' }}>
+          Created: {note.createdAt}
+          {note.updatedAt ? ` • Updated: ${note.updatedAt}` : null}
+        </footer>
+      </article>
+    );
   } catch {
     notFound();
   }
-
-  if (!note) {
-    notFound();
-  }
-
-  return (
-    <article style={{ maxWidth: 720, margin: '2rem auto', lineHeight: 1.6 }}>
-      <header
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 12,
-        }}
-      >
-        <h1 style={{ margin: 0 }}>{note.title}</h1>
-        <span
-          style={{
-            padding: '4px 8px',
-            borderRadius: 8,
-            background: '#eef',
-            fontSize: 12,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {note.tag}
-        </span>
-      </header>
-
-      <p style={{ marginTop: 12, whiteSpace: 'pre-wrap' }}>{note.content}</p>
-
-      <footer style={{ marginTop: 24, fontSize: 12, color: '#666' }}>
-        Created: {note.createdAt}
-        {note.updatedAt ? ` • Updated: ${note.updatedAt}` : null}
-      </footer>
-    </article>
-  );
 }
