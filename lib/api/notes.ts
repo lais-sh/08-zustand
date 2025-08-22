@@ -10,23 +10,23 @@ export type NotesResponse = {
 
 type FetchNotesParams = {
   page: number;
-  perPage?: number;
   search?: string;
   tag?: NoteTag | 'All';
 };
 
-function normalizeListResponse(raw: any, fallbackPerPage: number): NotesResponse {
+const QUERY_KEY =
+  process.env.NEXT_PUBLIC_NOTEHUB_QUERY_KEY ??
+  ((API.defaults.baseURL ?? '').includes('notehub-public.goit.study') ? 'query' : 'q');
+
+function normalizeListResponse(raw: any, page: number): NotesResponse {
   const notes: Note[] =
     raw?.notes ?? raw?.results ?? raw?.items ?? raw?.data ?? [];
 
-  const page: number = Number(raw?.page ?? 1);
-  const perPageFromApi =
-    Number(raw?.perPage ?? raw?.limit ?? fallbackPerPage) || fallbackPerPage;
-
+  const perPage = Number(raw?.perPage ?? raw?.limit ?? 12) || 12;
   const totalPages: number =
     Number(raw?.totalPages) ||
     (raw?.total
-      ? Math.max(1, Math.ceil(Number(raw.total) / perPageFromApi))
+      ? Math.max(1, Math.ceil(Number(raw.total) / perPage))
       : 1);
 
   return { notes, totalPages, page };
@@ -34,19 +34,19 @@ function normalizeListResponse(raw: any, fallbackPerPage: number): NotesResponse
 
 export async function fetchNotes({
   page,
-  perPage = 12,
   search,
   tag,
 }: FetchNotesParams): Promise<NotesResponse> {
   const params: Record<string, string | number> = { page };
 
   const q = search?.trim();
-  if (q) params.q = q;
+  if (q) params[QUERY_KEY] = q;
+
   if (tag && tag !== 'All') params.tag = tag;
 
   try {
     const { data } = await API.get('/notes', { params });
-    return normalizeListResponse(data, perPage);
+    return normalizeListResponse(data, page);
   } catch (err) {
     if (axios.isAxiosError(err)) {
       const status = err.response?.status ?? 'unknown';

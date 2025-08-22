@@ -6,8 +6,7 @@ import { useDebounce } from 'use-debounce';
 import { useQuery } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
-import { fetchNotes } from '@/lib/api/notes';
-import type { NotesResponse } from '@/lib/api/notes';
+import { fetchNotes, type NotesResponse } from '@/lib/api/notes';
 import { normalizeTag, type NoteTag } from '@/lib/api/tags';
 
 import NoteList from '@/components/NoteList/NoteList';
@@ -38,6 +37,7 @@ export default function NotesClient({ initialData, tag }: NotesClientProps) {
     data = initialData,
     isError,
     error,
+    isFetching,
   } = useQuery<NotesResponse, AxiosError>({
     queryKey: ['notes', { page, search: debouncedSearch.trim(), tag: effectiveTag }],
     queryFn: () =>
@@ -56,6 +56,7 @@ export default function NotesClient({ initialData, tag }: NotesClientProps) {
   };
 
   if (isError) {
+    // eslint-disable-next-line no-console
     console.error('Failed to load notes', {
       status: error?.response?.status,
       data: error?.response?.data,
@@ -67,8 +68,7 @@ export default function NotesClient({ initialData, tag }: NotesClientProps) {
     );
   }
 
-  const title =
-    !safeTag || safeTag === 'All' ? 'All notes' : `${safeTag} notes`;
+  const title = !safeTag || safeTag === 'All' ? 'All notes' : `${safeTag} notes`;
 
   return (
     <section className={css.app}>
@@ -86,6 +86,8 @@ export default function NotesClient({ initialData, tag }: NotesClientProps) {
           </Link>
         </div>
       </div>
+
+      {isFetching && <p style={{ opacity: 0.6, marginBottom: 8 }}>Searching…</p>}
 
       {data.notes.length > 0 ? (
         <NoteList notes={data.notes} />

@@ -1,16 +1,18 @@
-import React, { useState, ChangeEvent } from "react";
+'use client';
+
+import { useState, type ChangeEvent } from 'react';
 
 interface SearchBoxProps {
   onSearch: (query: string) => void;
 }
 
 export default function SearchBox({ onSearch }: SearchBoxProps) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const newQuery = e.target.value;
     setQuery(newQuery);
-    onSearch(newQuery.trim());
+    onSearch(newQuery);
   };
 
   return (
