@@ -2,7 +2,11 @@ import axios from 'axios';
 import type { Note, NoteTag, NewNote } from '@/types/note';
 import { API } from './http';
 
-export type NotesResponse = { notes: Note[]; totalPages: number; page: number };
+export type NotesResponse = {
+  notes: Note[];
+  totalPages: number;
+  page: number;
+};
 
 type FetchNotesParams = {
   page: number;
@@ -12,56 +16,35 @@ type FetchNotesParams = {
 
 function normalizeListResponse(raw: any, page: number): NotesResponse {
   const notes: Note[] = raw?.notes ?? raw?.results ?? raw?.items ?? raw?.data ?? [];
+
   const perPage = Number(raw?.perPage ?? raw?.limit ?? 12) || 12;
   const totalPages =
     Number(raw?.totalPages) ||
     (raw?.total ? Math.max(1, Math.ceil(Number(raw.total) / perPage)) : 1);
+
   return { notes, totalPages, page };
 }
 
-const isBadRequest = (e: unknown) =>
-  axios.isAxiosError(e) && e.response?.status === 400;
+export async function fetchNotes({
+  page,
+  search,
+  tag,
+}: FetchNotesParams): Promise<NotesResponse> {
+  const params: Record<string, string | number> = { page };
 
-function sanitizeQuery(q?: string): string {
-  if (!q) return '';
-  return q.replace(/[^\p{L}\p{N}\s\-_'.,]/gu, ' ').trim();
-}
+  const s = search?.trim();
+  if (s) params.search = s;
 
-export async function fetchNotes({ page, search, tag }: FetchNotesParams): Promise<NotesResponse> {
-  const baseParams: Record<string, string | number> = { page };
-  if (tag && tag !== 'All') baseParams.tag = tag;
-
-  const q = sanitizeQuery(search);
-
-  const run = async (key?: 'q' | 'query') => {
-    const params =
-      q && key ? { ...baseParams, [key]: q } : { ...baseParams };
-    const { data } = await API.get('/notes', { params });
-    return data;
-  };
+  if (tag && tag !== 'All') params.tag = tag;
 
   try {
-    if (!q) {
-      return normalizeListResponse(await run(), page);
-    }
-    try {
-      return normalizeListResponse(await run('q'), page);
-    } catch (err) {
-      if (isBadRequest(err)) {
-        return normalizeListResponse(await run('query'), page);
-      }
-      throw err;
-    }
+    const { data } = await API.get('/notes', { params });
+    return normalizeListResponse(data, page);
   } catch (err) {
     if (axios.isAxiosError(err)) {
-      console.error('Failed to load notes', {
-        url: '/notes',
-        params: { ...baseParams, q: q || undefined },
-        status: err.response?.status,
-        data: err.response?.data,
-      });
       const status = err.response?.status ?? 'unknown';
       const body = err.response?.data ?? err.message;
+      console.error('Failed to load notes', { url: '/notes', params, status, body });
       throw new Error(
         `List fetch failed (${status}). ${typeof body === 'string' ? body : JSON.stringify(body)}`
       );
